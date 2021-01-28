@@ -22,6 +22,7 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/pingcap/errors"
@@ -125,13 +126,13 @@ func (s *RedisEndpoint) Consume(from mysql.Position, rows []*model.RowRequest) e
 				return errors.Errorf("Lua 脚本执行失败 : %s ", errors.ErrorStack(err))
 			}
 			for _, resp := range ls {
-				s.preparePipe(resp, pipe)
+				s.preparePipe(resp, pipe, rule)
 				logs.Infof("action: %s, structure: %s ,key: %s ,field: %s, value: %v", resp.Action, resp.Structure, resp.Key, resp.Field, resp.Val)
 			}
 			kvm = nil
 		} else {
 			resp := s.ruleRespond(row, rule)
-			s.preparePipe(resp, pipe)
+			s.preparePipe(resp, pipe, rule)
 			logs.Infof("action: %s, structure: %s ,key: %s ,field: %s, value: %v", resp.Action, resp.Structure, resp.Key, resp.Field, resp.Val)
 		}
 	}
@@ -162,13 +163,13 @@ func (s *RedisEndpoint) Stock(rows []*model.RowRequest) int64 {
 				break
 			}
 			for _, resp := range ls {
-				s.preparePipe(resp, pipe)
+				s.preparePipe(resp, pipe, rule)
 			}
 		} else {
 			resp := s.ruleRespond(row, rule)
 			resp.Action = row.Action
 			resp.Structure = rule.RedisStructure
-			s.preparePipe(resp, pipe)
+			s.preparePipe(resp, pipe, rule)
 		}
 	}
 
@@ -222,7 +223,7 @@ func (s *RedisEndpoint) ruleRespond(row *model.RowRequest, rule *global.Rule) *m
 	return resp
 }
 
-func (s *RedisEndpoint) preparePipe(resp *model.RedisRespond, pipe redis.Cmdable) {
+func (s *RedisEndpoint) preparePipe(resp *model.RedisRespond, pipe redis.Cmdable, rule *global.Rule) {
 	switch resp.Structure {
 	case global.RedisStructureString:
 		if resp.Action == canal.DeleteAction {
@@ -266,6 +267,11 @@ func (s *RedisEndpoint) preparePipe(resp *model.RedisRespond, pipe redis.Cmdable
 			pipe.ZAdd(resp.Key, val)
 		}
 	}
+	// 除删除外且过期秒数大于1 设置过期时间
+	if resp.Action != canal.DeleteAction && rule.RedisExpiredSecond >= 1 {
+		pipe.Expire(resp.Key, time.Duration(rule.RedisExpiredSecond)*time.Second)
+	}
+
 }
 
 func (s *RedisEndpoint) encodeKey(req *model.RowRequest, rule *global.Rule) string {

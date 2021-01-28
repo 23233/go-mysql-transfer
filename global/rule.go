@@ -18,17 +18,16 @@
 package global
 
 import (
-	"io/ioutil"
-	"path/filepath"
-	"strings"
-	"sync"
-	"text/template"
-
 	"github.com/juju/errors"
 	"github.com/siddontang/go-mysql/schema"
 	"github.com/vmihailenco/msgpack"
 	"github.com/yuin/gopher-lua"
 	"github.com/yuin/gopher-lua/parse"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
+	"sync"
+	"text/template"
 
 	"go-mysql-transfer/model"
 	"go-mysql-transfer/util/dates"
@@ -84,9 +83,11 @@ type Rule struct {
 
 	// ------------------- REDIS -----------------
 	//对应redis的5种数据类型 String、Hash(字典) 、List(列表) 、Set(集合)、Sorted Set(有序集合)
-	RedisStructure string `yaml:"redis_structure"`
-	RedisKeyPrefix string `yaml:"redis_key_prefix"` //key的前缀
-	RedisKeyColumn string `yaml:"redis_key_column"` //使用哪个列的值作为key，不填写默认使用主键
+	RedisStructure       string `yaml:"redis_structure"`
+	RedisKeyPrefix       string `yaml:"redis_key_prefix"`       //key的前缀
+	RedisKeyColumn       string `yaml:"redis_key_column"`       //使用哪个列的值作为key，不填写默认使用主键
+	RedisExpiredSecond   int64  `yaml:"redis_expired_second"`   // 过期时间 单位是秒 修改自动续期
+	RedisDimensionColumn string `yaml:"redis_dimension_column"` // 其他纬度字段 指向主键 目前仅string有效
 	// 格式化定义key,如{id}-{name}；{id}表示字段id的值、{name}表示字段name的值
 	RedisKeyFormatter string `yaml:"redis_key_formatter"`
 	RedisKeyValue     string `yaml:"redis_key_value"` // key的值，固定值
@@ -200,7 +201,7 @@ func RuleKeyList() []string {
 	defer _lockOfRuleInsMap.RUnlock()
 
 	list := make([]string, 0, len(_ruleInsMap))
-	for k, _ := range _ruleInsMap {
+	for k := range _ruleInsMap {
 		list = append(list, k)
 	}
 
