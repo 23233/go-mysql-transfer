@@ -256,6 +256,7 @@ func encodeValue(rule *global.Rule, kv map[string]interface{}) string {
 	return val
 }
 
+// rowMap 行信息转换为map[string]interface{}
 func rowMap(req *model.RowRequest, rule *global.Rule, primitive bool) map[string]interface{} {
 	kv := make(map[string]interface{}, len(rule.PaddingMap))
 
@@ -361,7 +362,7 @@ func buildPropertiesByRule(rule *global.Rule) map[string]interface{} {
 	}
 
 	if len(rule.DefaultColumnValueMap) > 0 {
-		for key, _ := range rule.DefaultColumnValueMap {
+		for key := range rule.DefaultColumnValueMap {
 			property := make(map[string]interface{})
 			property["type"] = "keyword"
 			properties[key] = property

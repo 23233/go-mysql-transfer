@@ -19,6 +19,7 @@ package endpoint
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -194,6 +195,7 @@ func (s *RedisEndpoint) ruleRespond(row *model.RowRequest, rule *global.Rule) *m
 	resp.Structure = rule.RedisStructure
 
 	kvm := rowMap(row, rule, false)
+	resp.Kvm = kvm
 	resp.Key = s.encodeKey(row, rule)
 	if resp.Structure == global.RedisStructureHash {
 		resp.Field = s.encodeHashField(row, rule)
@@ -201,7 +203,6 @@ func (s *RedisEndpoint) ruleRespond(row *model.RowRequest, rule *global.Rule) *m
 	if resp.Structure == global.RedisStructureSortedSet {
 		resp.Score = s.encodeSortedSetScoreField(row, rule)
 	}
-
 	if resp.Action == canal.InsertAction {
 		resp.Val = encodeValue(rule, kvm)
 	} else if resp.Action == canal.UpdateAction {
@@ -271,7 +272,25 @@ func (s *RedisEndpoint) preparePipe(resp *model.RedisRespond, pipe redis.Cmdable
 	if resp.Action != canal.DeleteAction && rule.RedisExpiredSecond >= 1 {
 		pipe.Expire(resp.Key, time.Duration(rule.RedisExpiredSecond)*time.Second)
 	}
-
+	// 处理纬度信息 纬度默认就用string
+	if len(rule.RedisDimensionColumn) >= 1 {
+		for _, column := range strings.Split(rule.RedisDimensionColumn, ",") {
+			var k strings.Builder
+			k.WriteString(rule.RedisDimensionPrefix)
+			k.WriteString(column)
+			k.WriteString(":")
+			k.WriteString(fmt.Sprintf("%v", resp.Kvm[column]))
+			if resp.Action == canal.DeleteAction {
+				pipe.Del(k.String())
+			} else {
+				var expireTime time.Duration
+				if rule.RedisExpiredSecond >= 1 {
+					expireTime = time.Duration(rule.RedisExpiredSecond) * time.Second
+				}
+				pipe.Set(k.String(), resp.Key, expireTime)
+			}
+		}
+	}
 }
 
 func (s *RedisEndpoint) encodeKey(req *model.RowRequest, rule *global.Rule) string {

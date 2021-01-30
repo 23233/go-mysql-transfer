@@ -87,7 +87,8 @@ type Rule struct {
 	RedisKeyPrefix       string `yaml:"redis_key_prefix"`       //key的前缀
 	RedisKeyColumn       string `yaml:"redis_key_column"`       //使用哪个列的值作为key，不填写默认使用主键
 	RedisExpiredSecond   int64  `yaml:"redis_expired_second"`   // 过期时间 单位是秒 修改自动续期
-	RedisDimensionColumn string `yaml:"redis_dimension_column"` // 其他纬度字段 指向主键 目前仅string有效
+	RedisDimensionPrefix string `yaml:"redis_dimension_prefix"` // 纬度字段前缀
+	RedisDimensionColumn string `yaml:"redis_dimension_column"` // 其他纬度字段 指向主键 仅使用string
 	// 格式化定义key,如{id}-{name}；{id}表示字段id的值、{name}表示字段name的值
 	RedisKeyFormatter string `yaml:"redis_key_formatter"`
 	RedisKeyValue     string `yaml:"redis_key_value"` // key的值，固定值
@@ -424,6 +425,19 @@ func (s *Rule) newPadding(mappings map[string]string, columnName string) *model.
 		ColumnType:     column.Type,
 		ColumnMetadata: column,
 	}
+}
+
+// ValidRedisDimensionColumn check dimension col name full right! only use redis
+func (s *Rule) ValidRedisDimensionColumn() error {
+	if len(s.RedisDimensionColumn) >= 1 {
+		for _, col := range strings.Split(s.RedisDimensionColumn, ",") {
+			_, index := s.TableColumn(col)
+			if index == -1 {
+				return errors.Errorf("redis_dimension_column params:%s not find for table", col)
+			}
+		}
+	}
+	return nil
 }
 
 func (s *Rule) TableColumn(field string) (*schema.TableColumn, int) {

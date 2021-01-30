@@ -258,8 +258,13 @@ func (s *TransferService) completeRules() error {
 		if len(tableMata.PKColumns) > 1 {
 			rule.IsCompositeKey = true // 组合主键
 		}
+
 		rule.TableInfo = tableMata
 		rule.TableColumnSize = len(tableMata.Columns)
+
+		if err := rule.ValidRedisDimensionColumn(); err != nil {
+			return errors.Trace(err)
+		}
 
 		if err := rule.Initialize(); err != nil {
 			return errors.Trace(err)
@@ -315,6 +320,11 @@ func (s *TransferService) updateRule(schema, table string) error {
 
 		rule.TableInfo = tableInfo
 		rule.TableColumnSize = len(tableInfo.Columns)
+
+		// if update table column define
+		if err := rule.ValidRedisDimensionColumn(); err != nil {
+			return errors.Trace(err)
+		}
 
 		err = rule.AfterUpdateTableInfo()
 		if err != nil {

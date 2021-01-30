@@ -58,6 +58,7 @@ type RedisRespond struct {
 	Score     float64
 	OldVal    interface{}
 	Val       interface{}
+	Kvm       map[string]interface{}
 }
 
 func BuildMQRespond() *MQRespond {

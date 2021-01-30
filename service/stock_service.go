@@ -79,12 +79,12 @@ func (s *StockService) Run() error {
 	}
 	s.addDumpDatabaseOrTable()
 
-	endpoint := endpoint.NewEndpoint(s.canal)
-	if err := endpoint.Connect(); err != nil {
+	enp := endpoint.NewEndpoint(s.canal)
+	if err := enp.Connect(); err != nil {
 		log.Println(err.Error())
 		return errors.Trace(err)
 	}
-	s.endpoint = endpoint
+	s.endpoint = enp
 
 	startTime := dates.NowMillisecond()
 	log.Println(fmt.Sprintf("bulk size: %d", global.Cfg().BulkSize))
@@ -344,8 +344,13 @@ func (s *StockService) completeRules() error {
 		if len(tableMata.PKColumns) > 1 {
 			rule.IsCompositeKey = true // 组合主键
 		}
+
 		rule.TableInfo = tableMata
 		rule.TableColumnSize = len(tableMata.Columns)
+
+		if err := rule.ValidRedisDimensionColumn(); err != nil {
+			return errors.Trace(err)
+		}
 
 		if err := rule.Initialize(); err != nil {
 			return errors.Trace(err)
