@@ -93,6 +93,9 @@ rule:
     redis_structure: string # 数据类型。 支持string、hash、list、set、sortedset类型(与redis的数据类型一致)
     #redis_key_prefix: USER_ #key的前缀
     #redis_key_column: USER_NAME #使用哪个列的值作为key，不填写默认使用主键
+    #redis_expired_second: 86400 # 过期时间 单位是秒
+    #redis_dimension_prefix: "" # 多纬度前缀 推荐使用: 例 user:
+    #redis_dimension_column: "" # 多纬度分割列名 ,号间隔
     #redis_key_formatter: '{{.ID}}|{{.USER_NAME}}'
     #redis_key_value: user #KEY的值（固定值）；当redis_structure为hash、list、set、sortedset此值不能为空
     #redis_hash_field_prefix: _CARD_ #hash的field前缀，仅redis_structure为hash时起作用
