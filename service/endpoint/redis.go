@@ -275,6 +275,10 @@ func (s *RedisEndpoint) preparePipe(resp *model.RedisRespond, pipe redis.Cmdable
 	// 处理纬度信息 纬度默认就用string
 	if len(rule.RedisDimensionColumn) >= 1 {
 		for _, column := range strings.Split(rule.RedisDimensionColumn, ",") {
+			// 确切有值得情况下再进行 若是变更后为空 暂定等待他自动过期吧
+			if _, ok := resp.Kvm[column]; !ok {
+				continue
+			}
 			var k strings.Builder
 			k.WriteString(rule.RedisDimensionPrefix)
 			k.WriteString(column)
