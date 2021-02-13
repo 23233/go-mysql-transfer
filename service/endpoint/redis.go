@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -279,6 +280,10 @@ func (s *RedisEndpoint) preparePipe(resp *model.RedisRespond, pipe redis.Cmdable
 			if _, ok := resp.Kvm[column]; !ok {
 				continue
 			}
+			// 不允许有空值
+			if InterfaceIsNil2(resp.Kvm[column]) {
+				continue
+			}
 			var k strings.Builder
 			k.WriteString(rule.RedisDimensionPrefix)
 			k.WriteString(column)
@@ -359,4 +364,36 @@ func (s *RedisEndpoint) Close() {
 	if s.client != nil {
 		s.client.Close()
 	}
+}
+
+func InterfaceIsNil1(i interface{}) bool {
+	ret := i == nil
+
+	if !ret { //需要进一步做判断
+		defer func() {
+			recover()
+		}()
+		ret = reflect.ValueOf(i).IsNil() //值类型做异常判断，会panic的
+	}
+
+	return ret
+}
+
+func InterfaceIsNil2(i interface{}) bool {
+	ret := i == nil
+
+	if !ret { //需要进一步做判断
+		vi := reflect.ValueOf(i)
+		kind := reflect.ValueOf(i).Kind()
+		if kind == reflect.Slice ||
+			kind == reflect.Map ||
+			kind == reflect.Chan ||
+			kind == reflect.Interface ||
+			kind == reflect.Func ||
+			kind == reflect.Ptr {
+			return vi.IsNil()
+		}
+	}
+
+	return ret
 }
