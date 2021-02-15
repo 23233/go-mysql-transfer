@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -381,23 +382,18 @@ func InterfaceIsNil1(i interface{}) bool {
 	return ret
 }
 
+// InterfaceIsNil2 传入的都为值而不是指针 是否需要另外的判断方法?
 func InterfaceIsNil2(i interface{}) bool {
-	ret := i == nil
-
-	if !ret { //需要进一步做判断
-		vi := reflect.ValueOf(i)
-		kind := reflect.ValueOf(i).Kind()
-		if kind == reflect.Slice ||
-			kind == reflect.Map ||
-			kind == reflect.Chan ||
-			kind == reflect.Interface ||
-			kind == reflect.Func ||
-			kind == reflect.Ptr {
-			return vi.IsNil()
-		} else if kind == reflect.String {
-			return len(i.(string)) < 1
-		}
+	// 仅判断字符串和数字为空的情况
+	if _, ok := i.(string); ok {
+		return len(i.(string)) < 1
 	}
-
-	return ret
+	vi := reflect.ValueOf(i)
+	switch vi.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		// todo 可能需要优化的效率问题
+		v, _ := strconv.Atoi(fmt.Sprintf("%v", i))
+		return v < 1
+	}
+	return false
 }
