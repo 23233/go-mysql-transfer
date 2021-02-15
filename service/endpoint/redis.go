@@ -280,23 +280,25 @@ func (s *RedisEndpoint) preparePipe(resp *model.RedisRespond, pipe redis.Cmdable
 			if _, ok := resp.Kvm[column]; !ok {
 				continue
 			}
+			value := resp.Kvm[column]
 			// 不允许有空值
-			if InterfaceIsNil2(resp.Kvm[column]) {
+			if InterfaceIsNil2(value) {
 				continue
 			}
 			var k strings.Builder
 			k.WriteString(rule.RedisDimensionPrefix)
 			k.WriteString(column)
 			k.WriteString(":")
-			k.WriteString(fmt.Sprintf("%v", resp.Kvm[column]))
+			k.WriteString(fmt.Sprintf("%v", value))
+			redisKey := k.String()
 			if resp.Action == canal.DeleteAction {
-				pipe.Del(k.String())
+				pipe.Del(redisKey)
 			} else {
 				var expireTime time.Duration
 				if rule.RedisExpiredSecond >= 1 {
 					expireTime = time.Duration(rule.RedisExpiredSecond) * time.Second
 				}
-				pipe.Set(k.String(), resp.Key, expireTime)
+				pipe.Set(redisKey, resp.Key, expireTime)
 			}
 		}
 	}
@@ -392,6 +394,8 @@ func InterfaceIsNil2(i interface{}) bool {
 			kind == reflect.Func ||
 			kind == reflect.Ptr {
 			return vi.IsNil()
+		} else if kind == reflect.String {
+			return len(i.(string)) < 1
 		}
 	}
 
