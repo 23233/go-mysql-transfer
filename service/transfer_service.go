@@ -121,11 +121,12 @@ func (s *TransferService) run() error {
 			}
 			s.canalEnable.Store(false)
 		}
-
 		logs.Info("Canal is Closed")
 		s.canalEnable.Store(false)
 		s.canal = nil
 		s.wg.Done()
+		// 确保有一种良性退出机制 假设运行在docker可以重新运行
+		panic("canal err , transfer stop and exit...")
 	}(current)
 
 	// canal未提供回调，停留一秒，确保RunFrom启动成功
