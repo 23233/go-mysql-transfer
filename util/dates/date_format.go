@@ -19,6 +19,7 @@ package dates
 
 import (
 	"strings"
+	"time"
 )
 
 const (
@@ -121,4 +122,34 @@ func ConvertGoFormat(format string) string {
 	}
 
 	return goFormate
+}
+
+// ConvertDatetimeUse 转换datetime use为格式化字符串
+// use: RFC822 RFC822Z RFC850 RFC1123 RFC1123Z RFC3339 RFC3339Nano 其他默认RFC3339
+func ConvertDatetimeUse(use string) string {
+	var lowUse = strings.ToUpper(use)
+	switch lowUse {
+	case "RFC822":
+		lowUse = strings.Replace(lowUse, "RFC822", time.RFC822, -1)
+		break
+	case "RFC822Z":
+		lowUse = strings.Replace(lowUse, "RFC822Z", time.RFC822Z, -1)
+		break
+	case "RFC850":
+		lowUse = strings.Replace(lowUse, "RFC850", time.RFC850, -1)
+		break
+	case "RFC1123":
+		lowUse = strings.Replace(lowUse, "RFC1123", time.RFC1123, -1)
+		break
+	case "RFC1123Z":
+		lowUse = strings.Replace(lowUse, "RFC1123Z", time.RFC1123Z, -1)
+		break
+	case "RFC3339Nano":
+		lowUse = strings.Replace(lowUse, "RFC3339Nano", time.RFC3339Nano, -1)
+		break
+	default:
+		lowUse = strings.Replace(lowUse, "RFC3339", time.RFC3339, -1)
+		break
+	}
+	return lowUse
 }

@@ -78,8 +78,9 @@ type Rule struct {
 	LuaFilePath       string `yaml:"lua_file_path"`      //lua 文件地址
 	DateFormatter     string `yaml:"date_formatter"`     //date类型格式化， 不填写默认2006-01-02
 	DatetimeFormatter string `yaml:"datetime_formatter"` //datetime、timestamp类型格式化，不填写默认RFC3339(2006-01-02T15:04:05Z07:00)
-
-	ReserveRawData bool `yaml:"reserve_raw_data"` // 保留update之前的数据，针对KAFKA、RABBITMQ、ROCKETMQ有效
+	// datetime格式化模式 可选RFC822 RFC822Z RFC850 RFC1123 RFC1123Z RFC3339 RFC3339Nano 优先级高于DatetimeFormatter
+	DatetimeUse    string `yaml:"datetime_use"`
+	ReserveRawData bool   `yaml:"reserve_raw_data"` // 保留update之前的数据，针对KAFKA、RABBITMQ、ROCKETMQ有效
 
 	// ------------------- REDIS -----------------
 	//对应redis的5种数据类型 String、Hash(字典) 、List(列表) 、Set(集合)、Sorted Set(有序集合)
@@ -247,6 +248,10 @@ func (s *Rule) Initialize() error {
 
 	if s.DatetimeFormatter != "" {
 		s.DatetimeFormatter = dates.ConvertGoFormat(s.DatetimeFormatter)
+	}
+
+	if s.DatetimeUse != "" {
+		s.DatetimeUse = dates.ConvertDatetimeUse(s.DatetimeUse)
 	}
 
 	if _config.IsRedis() {

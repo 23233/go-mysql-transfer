@@ -153,10 +153,13 @@ func convertColumnData(value interface{}, col *schema.TableColumn, rule *global.
 		case []byte:
 			vv = string(v)
 		}
-		if rule.DatetimeFormatter != "" {
+		if rule.DatetimeFormatter != "" || rule.DatetimeUse != "" {
 			vt, err := time.Parse(mysql.TimeFormat, vv)
 			if err != nil || vt.IsZero() { // failed to parse date or zero date
 				return nil
+			}
+			if rule.DatetimeUse != "" {
+				return vt.Format(rule.DatetimeUse)
 			}
 			return vt.Format(rule.DatetimeFormatter)
 		}
